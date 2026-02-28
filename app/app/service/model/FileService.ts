@@ -32,7 +32,16 @@ export class FileService {
     formated_data: string[][],
     name: string
   ): Promise<void> {
-    const rows = formated_data;
+    const header = [
+      "Date",
+      "Phoneme",
+      "Attempts",
+      "Correct",
+      "Accuracy",
+      "Minutes",
+      "Game",
+    ];
+    const rows = [header, ...formated_data];
 
     let displayName: string = "";
     if (name == "") {
