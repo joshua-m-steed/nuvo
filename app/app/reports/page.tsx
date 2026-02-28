@@ -8,7 +8,9 @@ import {
 } from "../../../lib/api";
 import type { HomeworkAssignment, Student } from "../../../lib/types";
 import { CSVData } from "../../../lib/CSVData";
-import { FileService } from "../service/model/FileService";
+import { CsvService } from "../service/model/CsvService";
+import { PdfService } from "../service/model/PdfService";
+import { DemoDataService } from "../service/model/DemoDataService";
 
 type Scope = "all" | "individual";
 type ActiveTab = "preview" | "generated";
@@ -50,7 +52,9 @@ export default function ReportsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
 
-  const fileService = new FileService();
+  const csvService = new CsvService();
+  const pdfService = new PdfService();
+  const demoDataService = new DemoDataService();
 
   useEffect(() => {
     if (!user) return;
@@ -196,7 +200,7 @@ export default function ReportsPage() {
 
       csvDataSet = [...csvDataSet, csvData];
     }
-    await fileService.formatCsvFile(csvDataSet);
+    await csvService.saveFile(csvDataSet);
   };
 
   const exportPdf = async (name: string) => {
@@ -217,7 +221,7 @@ export default function ReportsPage() {
 
       csvDataSet = [...csvDataSet, csvData];
     }
-    await fileService.formatPdfFile(csvDataSet);
+    await pdfService.saveFile(csvDataSet);
   };
 
   const exportPreloadCsv = async (
@@ -228,8 +232,8 @@ export default function ReportsPage() {
     let csvDataSet: CSVData[] = [];
     const parsed_name = name.split(" - ");
 
-    for (let i = 0; i < fileService.getDEMORandomInt(1, 50); i++) {
-      const dummyAccuracy = `${fileService.getDEMORandomInt(0, 100)}%`;
+    for (let i = 0; i < demoDataService.getDEMORandomInt(1, 50); i++) {
+      const dummyAccuracy = `${demoDataService.getDEMORandomInt(0, 100)}%`;
 
       const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
 
@@ -237,16 +241,16 @@ export default function ReportsPage() {
         parsed_name[1],
         date,
         phoneme,
-        fileService.getDEMORandomInt(1, 5),
-        fileService.getDEMORandomInt(1, 50),
+        demoDataService.getDEMORandomInt(1, 5),
+        demoDataService.getDEMORandomInt(1, 50),
         dummyAccuracy,
-        fileService.getDEMORandomInt(1, 5200),
-        gameList[fileService.getDEMORandomInt(0, 3)]
+        demoDataService.getDEMORandomInt(1, 5200),
+        gameList[demoDataService.getDEMORandomInt(0, 3)]
       );
 
       csvDataSet = [...csvDataSet, csvData];
     }
-    await fileService.formatCsvFile(csvDataSet);
+    await csvService.saveFile(csvDataSet);
   };
 
   const exportPreloadPdf = async (
@@ -257,8 +261,8 @@ export default function ReportsPage() {
     let csvDataSet: CSVData[] = [];
     const parsed_name = name.split(" - ");
 
-    for (let i = 0; i < fileService.getDEMORandomInt(10, 500); i++) {
-      const dummyAccuracy = `${fileService.getDEMORandomInt(0, 100)}%`;
+    for (let i = 0; i < demoDataService.getDEMORandomInt(10, 500); i++) {
+      const dummyAccuracy = `${demoDataService.getDEMORandomInt(0, 100)}%`;
 
       const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
 
@@ -266,16 +270,16 @@ export default function ReportsPage() {
         parsed_name[1],
         date,
         phoneme,
-        fileService.getDEMORandomInt(1, 5),
-        fileService.getDEMORandomInt(1, 50),
+        demoDataService.getDEMORandomInt(1, 5),
+        demoDataService.getDEMORandomInt(1, 50),
         dummyAccuracy,
-        fileService.getDEMORandomInt(1, 5200),
-        gameList[fileService.getDEMORandomInt(0, 3)]
+        demoDataService.getDEMORandomInt(1, 5200),
+        gameList[demoDataService.getDEMORandomInt(0, 3)]
       );
 
       csvDataSet = [...csvDataSet, csvData];
     }
-    await fileService.formatPdfFile(csvDataSet);
+    await pdfService.saveFile(csvDataSet);
   };
 
   return (
