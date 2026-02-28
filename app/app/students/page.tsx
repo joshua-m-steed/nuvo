@@ -768,7 +768,7 @@ export default function StudentsPage() {
                       <input
                         className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
                         placeholder="e.g., /r/ initial, /s/ final"
-                        value={g.phoneme}
+                        value={g.phoneme || ""}
                         onChange={(e) => {
                           setDraft((d) =>
                             d
@@ -869,7 +869,8 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-3xl rounded-2xl bg-white p-5 ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+
+      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-white p-5 ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button
@@ -879,7 +880,7 @@ function Modal({
             Close
           </button>
         </div>
-        <div className="mt-3">{children}</div>
+        <div className="mt-3 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
