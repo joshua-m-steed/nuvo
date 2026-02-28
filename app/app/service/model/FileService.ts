@@ -151,8 +151,6 @@ export class FileService {
 
     const streak = this.getDEMORandomInt(0, 75);
 
-    console.log(accuracy_list);
-
     let displayName: string = "";
     if (name === "") {
       displayName = "All Students";
@@ -281,21 +279,31 @@ export class FileService {
     }
 
     // ---- Graph Placeholder ----
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
     doc.text("Progress Graph", 10, currentY);
     currentY += 8;
 
-    const graphHeight = 60;
+    const graphHeight = 100;
 
     // Placeholder box
     doc.rect(10, currentY, pageWidth - 20, graphHeight);
-    doc.text(
-      "Graph PNG will render here",
-      pageWidth / 2,
-      currentY + graphHeight / 2,
-      {
-        align: "center",
-      }
+    doc.addImage(
+      "/assets/demo_graph.png",
+      "PNG",
+      10,
+      currentY,
+      pageWidth - 20,
+      graphHeight
     );
+    // doc.text(
+    //   "Graph PNG will render here",
+    //   pageWidth / 2,
+    //   currentY + graphHeight / 2,
+    //   {
+    //     align: "center",
+    //   }
+    // );
 
     currentY += graphHeight + 15;
 
