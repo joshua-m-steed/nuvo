@@ -283,7 +283,10 @@ export default function ReportsPage() {
                       ? "bg-[#FFE7E0] text-[#D94E3A] font-medium"
                       : "bg-white text-black/70"
                   }`}
-                  onClick={() => setScope("all")}
+                  onClick={() => {
+                    setScope("all");
+                    setStudentQuery("");
+                  }}
                   type="button"
                 >
                   All Students
