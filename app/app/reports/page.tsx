@@ -220,6 +220,64 @@ export default function ReportsPage() {
     await fileService.formatPdfFile(csvDataSet);
   };
 
+  const exportPreloadCsv = async (
+    name: string,
+    date: string,
+    phoneme: string
+  ) => {
+    let csvDataSet: CSVData[] = [];
+    const parsed_name = name.split(" - ");
+
+    for (let i = 0; i < getDEMORandomInt(1, 50); i++) {
+      const dummyAccuracy = `${getDEMORandomInt(0, 100)}%`;
+
+      const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
+
+      const csvData = new CSVData(
+        parsed_name[1],
+        date,
+        phoneme,
+        getDEMORandomInt(1, 5),
+        getDEMORandomInt(1, 50),
+        dummyAccuracy,
+        getDEMORandomInt(1, 5200),
+        gameList[getDEMORandomInt(0, 3)]
+      );
+
+      csvDataSet = [...csvDataSet, csvData];
+    }
+    await fileService.formatCsvFile(csvDataSet);
+  };
+
+  const exportPreloadPdf = async (
+    name: string,
+    date: string,
+    phoneme: string
+  ) => {
+    let csvDataSet: CSVData[] = [];
+    const parsed_name = name.split(" - ");
+
+    for (let i = 0; i < getDEMORandomInt(10, 500); i++) {
+      const dummyAccuracy = `${getDEMORandomInt(0, 100)}%`;
+
+      const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
+
+      const csvData = new CSVData(
+        parsed_name[1],
+        date,
+        phoneme,
+        getDEMORandomInt(1, 5),
+        getDEMORandomInt(1, 50),
+        dummyAccuracy,
+        getDEMORandomInt(1, 5200),
+        gameList[getDEMORandomInt(0, 3)]
+      );
+
+      csvDataSet = [...csvDataSet, csvData];
+    }
+    await fileService.formatPdfFile(csvDataSet);
+  };
+
   return (
     <div className="text-[#161616] space-y-8">
       <div className="flex items-end justify-between gap-4 flex-wrap">
@@ -609,10 +667,28 @@ export default function ReportsPage() {
                         <button className="px-3 py-1.5 rounded-lg bg-black/5">
                           Open
                         </button>
-                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">
+                        <button
+                          className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10"
+                          onClick={async () => {
+                            await exportPreloadPdf(
+                              r.name,
+                              r.created,
+                              r.phoneme
+                            );
+                          }}
+                        >
                           PDF
                         </button>
-                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">
+                        <button
+                          className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10"
+                          onClick={async () => {
+                            await exportPreloadCsv(
+                              r.name,
+                              r.created,
+                              r.phoneme
+                            );
+                          }}
+                        >
                           CSV
                         </button>
                       </div>
@@ -816,6 +892,12 @@ function StatusPill({ status }: { status: Row["status"] }) {
       {status}
     </span>
   );
+}
+
+function getDEMORandomInt(min: number, max: number): number {
+  const minCeiled = Math.ceil(min);
+  const maxFloored = Math.floor(max);
+  return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
 
 function Modal({

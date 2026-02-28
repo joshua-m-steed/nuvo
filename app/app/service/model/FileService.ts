@@ -166,6 +166,7 @@ export class FileService {
     img.src = "/assets/favicon.png";
 
     img.onload = () => {
+      doc.setPage(1);
       doc.addImage(img, "PNG", 10, 10, 25, 25);
       doc.save(`${fileName}_Progress_Report.pdf`);
     };
