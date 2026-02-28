@@ -228,8 +228,8 @@ export default function ReportsPage() {
     let csvDataSet: CSVData[] = [];
     const parsed_name = name.split(" - ");
 
-    for (let i = 0; i < getDEMORandomInt(1, 50); i++) {
-      const dummyAccuracy = `${getDEMORandomInt(0, 100)}%`;
+    for (let i = 0; i < fileService.getDEMORandomInt(1, 50); i++) {
+      const dummyAccuracy = `${fileService.getDEMORandomInt(0, 100)}%`;
 
       const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
 
@@ -237,11 +237,11 @@ export default function ReportsPage() {
         parsed_name[1],
         date,
         phoneme,
-        getDEMORandomInt(1, 5),
-        getDEMORandomInt(1, 50),
+        fileService.getDEMORandomInt(1, 5),
+        fileService.getDEMORandomInt(1, 50),
         dummyAccuracy,
-        getDEMORandomInt(1, 5200),
-        gameList[getDEMORandomInt(0, 3)]
+        fileService.getDEMORandomInt(1, 5200),
+        gameList[fileService.getDEMORandomInt(0, 3)]
       );
 
       csvDataSet = [...csvDataSet, csvData];
@@ -257,8 +257,8 @@ export default function ReportsPage() {
     let csvDataSet: CSVData[] = [];
     const parsed_name = name.split(" - ");
 
-    for (let i = 0; i < getDEMORandomInt(10, 500); i++) {
-      const dummyAccuracy = `${getDEMORandomInt(0, 100)}%`;
+    for (let i = 0; i < fileService.getDEMORandomInt(10, 500); i++) {
+      const dummyAccuracy = `${fileService.getDEMORandomInt(0, 100)}%`;
 
       const gameList = ["DJ Dino", "Safari Jeep", "Fishing Dock"];
 
@@ -266,11 +266,11 @@ export default function ReportsPage() {
         parsed_name[1],
         date,
         phoneme,
-        getDEMORandomInt(1, 5),
-        getDEMORandomInt(1, 50),
+        fileService.getDEMORandomInt(1, 5),
+        fileService.getDEMORandomInt(1, 50),
         dummyAccuracy,
-        getDEMORandomInt(1, 5200),
-        gameList[getDEMORandomInt(0, 3)]
+        fileService.getDEMORandomInt(1, 5200),
+        gameList[fileService.getDEMORandomInt(0, 3)]
       );
 
       csvDataSet = [...csvDataSet, csvData];
@@ -892,12 +892,6 @@ function StatusPill({ status }: { status: Row["status"] }) {
       {status}
     </span>
   );
-}
-
-function getDEMORandomInt(min: number, max: number): number {
-  const minCeiled = Math.ceil(min);
-  const maxFloored = Math.floor(max);
-  return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
 
 function Modal({
