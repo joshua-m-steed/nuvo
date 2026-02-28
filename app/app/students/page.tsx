@@ -61,6 +61,7 @@ type StudentDraft = {
   setting: Student["setting"];
   slp: string;
   targetsText: string;
+  overall_goal: string;
   goals: Goal[];
 };
 
@@ -215,6 +216,7 @@ function toDraft(s: Student): StudentDraft {
     setting: s.setting,
     slp: s.slp,
     targetsText: s.targets.join(", "),
+    overall_goal: `${s.name} should practice by ...`,
     goals: s.goals.map((g) => ({ ...g })),
   };
 }
@@ -705,6 +707,18 @@ export default function StudentsPage() {
               </button>
             </div>
 
+            <Field label="Overall Goal">
+              <textarea
+                className="w-full px-3 py-5 pt-2 pb-4 rounded-xl ring-1 ring-black/10 text-left align-top"
+                value={draft.overall_goal}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d ? { ...d, overall_goal: e.target.value } : d
+                  )
+                }
+              />
+            </Field>
+
             <div className="mt-3 space-y-2">
               {draft.goals.map((g, idx) => (
                 <div key={idx} className="rounded-xl ring-1 ring-black/10 p-3">
@@ -1032,4 +1046,14 @@ function Badge({
       {children}
     </span>
   );
+}
+
+// function getDEMORandomInt(min: number, max: number): number {
+//   const minCeiled = Math.ceil(min);
+//   const maxFloored = Math.floor(max);
+//   return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
+// }
+
+function generateOveralGoal(name: string) {
+  return `${name} should practice by ...`;
 }
