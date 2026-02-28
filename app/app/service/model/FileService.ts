@@ -142,7 +142,7 @@ export class FileService {
     name: string,
     average_accuracy: string,
     total_minutes: string,
-    phoneme_list: Set<string>
+    phoneme_set: Set<string>
   ): Promise<void> {
     const doc = new jsPDF();
 
@@ -241,16 +241,31 @@ export class FileService {
 
     doc.setTextColor(0, 0, 0);
 
-    const overall_para: string = `${displayName} should practice the following phonemes: ${this.collective_phoneme(
-      phoneme_list
-    )}. They can practice these with family, friends, or using the game(s): ${this.getDEMOGame()}`;
+    const overall_paragraph: string = `${displayName} should practice the following phonemes: ${this.collective_phoneme(
+      phoneme_set
+    )}. They can practice these with family, friends, or using the game(s): ${this.getDEMOGame()}\n`;
+
+    const objective_paragraph: string = `${displayName} can accomplish this goal by doing the following: \n${this.getDEMOActivities(
+      phoneme_set,
+      this.getDEMORandomInt(1, 5)
+    )}`;
+
+    let temp_list = Array.from(phoneme_set);
+    const current_result_paragraph: string = `${displayName} ${
+      displayName == "All Students" ? "were" : "was"
+    } able to produce ${
+      temp_list[this.getDEMORandomInt(0, temp_list.length)]
+    } with ${average_accuracy} as measured by SLP data taken over ${this.getDEMORandomInt(
+      2,
+      15
+    )} sessions!`;
 
     // ---- Summary Headers ----
     const sectionTitles = ["Overall Goal", "Objectives", "Results"];
     let paragraphTexts = [
-      overall_para,
-      "We aim to increase social media presence, optimize content delivery, and enhance customer support.",
-      "The expected results include higher retention rates, increased traffic, and stronger brand loyalty.",
+      overall_paragraph,
+      objective_paragraph,
+      current_result_paragraph,
     ];
 
     doc.setFont("helvetica", "bold");
@@ -331,5 +346,24 @@ export class FileService {
     const minCeiled = Math.ceil(min);
     const maxFloored = Math.floor(max);
     return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
+  }
+
+  public getDEMOActivities(
+    phoneme_list: Set<string>,
+    num_of_activities: number
+  ): string {
+    let activity_set: string = "";
+    for (let i = 0; i < num_of_activities; i++) {
+      activity_set += this.getDEMOActivity(phoneme_list);
+    }
+    return activity_set;
+  }
+
+  public getDEMOActivity(phoneme_set: Set<string>): string {
+    const phonemes_array = Array.from(phoneme_set);
+    let activity: string = ` * Playing ${this.getDEMOGame()} to practice ${
+      phonemes_array[this.getDEMORandomInt(0, phonemes_array.length)]
+    } for ${this.getDEMORandomInt(5, 30)} minutes.\n`;
+    return activity;
   }
 }
