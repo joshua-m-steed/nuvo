@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { height: 100%; }
+body { background: white; color: #0F172A; }
+
+:focus-visible { outline: 2px solid #E45B3E; outline-offset: 2px; }
+
+.skeleton {
+  background: linear-gradient(90deg, #F3F4F6, #E5E7EB, #F3F4F6);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* Nuvo App Shell */
+.nuvo-shell{display:flex;min-height:100vh;background:#fff;}
+.nuvo-sidebar{width:260px;border-right:1px solid rgba(0,0,0,0.06);background:#fff;position:sticky;top:0;height:100vh;}
+.nuvo-sidebar__inner{padding:16px;}
+.nuvo-sidebar__label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,0,0,0.5);margin:8px 8px 10px;}
+.nuvo-nav{display:flex;flex-direction:column;gap:6px;}
+.nuvo-nav__item{padding:10px 10px;border-radius:10px;text-decoration:none;color:rgba(0,0,0,0.78);border:1px solid transparent;}
+.nuvo-nav__item:hover{background:rgba(0,0,0,0.03);}
+.nuvo-nav__item--active{background:rgba(228,91,62,0.10);border-color:rgba(228,91,62,0.18);color:#111;}
+.nuvo-main{flex:1;min-width:0;}
+.nuvo-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(0,0,0,0.08);background:#FFE7E0;position:sticky;top:0;z-index:5;}
+.nuvo-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#111;}
+.nuvo-brand__logo{height:26px;width:auto;}
+.nuvo-brand__text{font-size:14px;color:rgba(0,0,0,0.65);}
+.nuvo-topbar__right{display:flex;align-items:center;gap:10px;}
+.nuvo-user{font-size:12px;color:rgba(0,0,0,0.55);}
+.nuvo-content{padding:20px 28px;max-width:1560px;width:100%;margin:0 auto;}
+.nuvo-btn{border-radius:10px;border:1px solid rgba(0,0,0,0.10);padding:8px 10px;background:#fff;cursor:pointer;}
+.nuvo-btn--ghost{background:#fff;}
