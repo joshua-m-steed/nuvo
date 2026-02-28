@@ -754,7 +754,11 @@ export default function StudentsPage() {
                       <input
                         className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
                         placeholder="e.g., /r/ initial, /s/ final"
-                        value={g.now}
+                        value={
+                          g.phoneme === undefined
+                            ? ""
+                            : "/r/ initial, /s/ final"
+                        }
                         onChange={(e) =>
                           setDraft((d) =>
                             d
