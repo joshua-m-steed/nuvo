@@ -566,9 +566,9 @@ export default function StudentsPage() {
                   Next due: {selected.homework.due}
                 </div>
                 <div className="mt-3 space-y-2">
-                  {selected.homework.items.map((it) => (
+                  {selected.homework.items.map((it, i) => (
                     <div
-                      key={it.name}
+                      key={`${it.name}-${i}`}
                       className="rounded-xl ring-1 ring-black/10 p-3"
                     >
                       <div className="flex items-center justify-between">
@@ -754,11 +754,28 @@ export default function StudentsPage() {
                       <input
                         className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
                         placeholder="e.g., /r/ initial, /s/ final"
-                        value={
-                          g.phoneme === undefined
-                            ? ""
-                            : "/r/ initial, /s/ final"
-                        }
+                        value={g.phoneme}
+                        onChange={(e) => {
+                          setDraft((d) =>
+                            d
+                              ? {
+                                  ...d,
+                                  goals: d.goals.map((x, i) =>
+                                    i === idx
+                                      ? { ...x, phoneme: e.target.value }
+                                      : x
+                                  ),
+                                }
+                              : d
+                          );
+                        }}
+                      />
+                    </Field>
+                    <Field label="Accuracy">
+                      <input
+                        className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                        placeholder="e.g., 68, 74, 73"
+                        value={g.now}
                         onChange={(e) =>
                           setDraft((d) =>
                             d
@@ -767,27 +784,6 @@ export default function StudentsPage() {
                                   goals: d.goals.map((x, i) =>
                                     i === idx
                                       ? { ...x, now: e.target.value }
-                                      : x
-                                  ),
-                                }
-                              : d
-                          )
-                        }
-                      />
-                    </Field>
-                    <Field label="Accuracy">
-                      <input
-                        className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
-                        placeholder="e.g., 68, 74, 73"
-                        value={g.last}
-                        onChange={(e) =>
-                          setDraft((d) =>
-                            d
-                              ? {
-                                  ...d,
-                                  goals: d.goals.map((x, i) =>
-                                    i === idx
-                                      ? { ...x, last: e.target.value }
                                       : x
                                   ),
                                 }
