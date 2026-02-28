@@ -151,17 +151,7 @@ export class FileService {
 
     const streak = this.getDEMORandomInt(0, 75);
 
-    const header = [
-      "Date",
-      "Phoneme",
-      "Attempts",
-      "Correct",
-      "Accuracy",
-      "Minutes",
-      "Game",
-    ];
-
-    const rows = formatted_data;
+    console.log(accuracy_list);
 
     let displayName: string = "";
     if (name === "") {
@@ -309,18 +299,69 @@ export class FileService {
 
     currentY += graphHeight + 15;
 
+    const homework = structuredClone(formatted_data);
+
+    const sessions = this.getDEMOSessionData(structuredClone(formatted_data));
+
     // ---- Table ----
-    // autoTable(doc, {
-    //   startY: 45,
-    //   head: [header],
-    //   body: rows,
-    //   styles: {
-    //     fontSize: 9,
-    //   },
-    //   headStyles: {
-    //     fillColor: [228, 91, 62],
-    //   },
-    // });
+    doc.addPage();
+    doc.setPage(doc.getNumberOfPages());
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Sessions", 14, 15);
+
+    const session_header = [
+      "Date",
+      "Phoneme",
+      "Attempts",
+      "Correct",
+      "Accuracy",
+      "Sessions",
+      "Notes",
+    ];
+
+    autoTable(doc, {
+      startY: 20,
+      head: [session_header],
+      body: sessions,
+      styles: {
+        fontSize: 9,
+      },
+      headStyles: {
+        fillColor: [228, 91, 62],
+      },
+    });
+
+    // ---- Table2 ----
+    doc.addPage();
+    doc.setPage(doc.getNumberOfPages());
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Homework", 14, 15);
+
+    const header = [
+      "Date",
+      "Phoneme",
+      "Attempts",
+      "Correct",
+      "Accuracy",
+      "Minutes",
+      "Game",
+    ];
+
+    autoTable(doc, {
+      startY: 20,
+      head: [header],
+      body: homework,
+      styles: {
+        fontSize: 9,
+      },
+      headStyles: {
+        fillColor: [228, 91, 62],
+      },
+    });
 
     const img = new Image();
     img.src = "/assets/favicon.png";
@@ -368,5 +409,25 @@ export class FileService {
       phonemes_array[this.getDEMORandomInt(0, phonemes_array.length)]
     } for ${this.getDEMORandomInt(5, 30)} minutes.\n`;
     return activity;
+  }
+
+  public getDEMOSessionData(data: string[][]): string[][] {
+    let reworked_data: string[][] = [];
+    let j: number = data.length;
+
+    const notes: string[] = [
+      "Well done!",
+      "Could use more practice",
+      "Try again tomorrow",
+      "Work with parent",
+    ];
+
+    for (let i = 0; i < data.length; i++) {
+      reworked_data = [...reworked_data, data[i]];
+      reworked_data[i][5] = (j - i).toString();
+      reworked_data[i][6] = notes[this.getDEMORandomInt(0, 4)];
+    }
+
+    return reworked_data;
   }
 }
