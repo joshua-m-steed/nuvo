@@ -4,54 +4,17 @@ import autoTable from "jspdf-autotable";
 import { FileService } from "./FileService";
 
 export class PdfService extends FileService {
-  protected async formatData(data: CSVData[]): Promise<void> {
-    let csv_collection: string[][] = [];
-    let accuracy_list: string[] = [];
-    let collected_time: number[] = [];
-    let phoneme_list: Set<string> = new Set();
-
-    for (let i = 0; i < data.length; i++) {
-      let row: CSVData = data[i];
-      accuracy_list = [...accuracy_list, row.accuracy];
-      collected_time = [...collected_time, row.minutes];
-      phoneme_list.add(row.phoneme);
-
-      let csv_array: string[] = [
-        row.date,
-        row.phoneme,
-        row.attempt.toString(),
-        row.correct.toString(),
-        row.accuracy,
-        row.minutes.toString(),
-        row.game,
-      ];
-
-      csv_collection = [...csv_collection, csv_array];
-    }
-
-    await this.exportData(
-      csv_collection,
-      data[0].name,
-      accuracy_list,
-      collected_time,
-      phoneme_list
-    );
-
-    return;
-  }
-
   protected async exportData(
     formatted_data: string[][],
-    name: string,
-    accuracy_list: string[],
-    collected_time: number[],
-    phoneme_set: Set<string>
+    name: string
   ): Promise<void> {
     const doc = new jsPDF();
+    const { accuracy_list, time_list, phoneme_list } =
+      this.demoDataService.gather_data_collections(formatted_data);
 
     const averaged_accuracy =
       this.demoDataService.average_accuracy(accuracy_list);
-    const total_minutes = this.demoDataService.total_minutes(collected_time);
+    const total_minutes = this.demoDataService.total_minutes(time_list);
 
     const streak = this.demoDataService.getDEMORandomInt(0, 75);
 
@@ -137,19 +100,20 @@ export class PdfService extends FileService {
     doc.setTextColor(0, 0, 0);
 
     const overall_paragraph: string = `${displayName} should practice the following phonemes: ${this.demoDataService.collective_phoneme(
-      phoneme_set
+      phoneme_list
     )}. They can practice these with family, friends, or using the game(s): ${this.demoDataService.getDEMOGame()}.\n`;
 
     const objective_paragraph: string = `${displayName} can accomplish this goal by doing the following: \n${this.demoDataService.getDEMOActivities(
-      phoneme_set,
+      phoneme_list,
       this.demoDataService.getDEMORandomInt(1, 5)
     )}`;
 
-    let temp_list = Array.from(phoneme_set);
     const current_result_paragraph: string = `${displayName} ${
       displayName == "All Students" ? "were" : "was"
     } able to produce ${
-      temp_list[this.demoDataService.getDEMORandomInt(0, temp_list.length)]
+      phoneme_list[
+        this.demoDataService.getDEMORandomInt(0, phoneme_list.length)
+      ]
     } with ${averaged_accuracy} as measured by SLP data taken over ${this.demoDataService.getDEMORandomInt(
       2,
       15

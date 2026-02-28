@@ -12,15 +12,38 @@ export abstract class FileService {
     return this._demoDataService;
   }
 
-  public async saveFile(data: CSVData[]): Promise<void> {}
+  public async saveFile(data: CSVData[]): Promise<void> {
+    const { formatted_data, name } = await this.formatData(data);
+    await this.exportData(formatted_data, name);
+  }
 
-  protected abstract formatData(data: CSVData[]): Promise<void>;
+  private async formatData(
+    data: CSVData[]
+  ): Promise<{ formatted_data: string[][]; name: string }> {
+    let formatted_data: string[][] = [];
+    const name = data[0].name;
+
+    for (let i = 0; i < data.length; i++) {
+      let row: CSVData = data[i];
+
+      let csv_array: string[] = [
+        row.date,
+        row.phoneme,
+        row.attempt.toString(),
+        row.correct.toString(),
+        row.accuracy,
+        row.minutes.toString(),
+        row.game,
+      ];
+
+      formatted_data = [...formatted_data, csv_array];
+    }
+
+    return { formatted_data, name };
+  }
 
   protected abstract exportData(
     formatted_data: string[][],
-    name: string,
-    accuracy_list?: string[],
-    collected_time?: number[],
-    phoneme_set?: Set<string>
+    name: string
   ): Promise<void>;
 }

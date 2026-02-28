@@ -2,30 +2,6 @@ import { CSVData } from "../../../../lib/CSVData";
 import { FileService } from "./FileService";
 
 export class CsvService extends FileService {
-  public async formatData(data: CSVData[]): Promise<void> {
-    let csv_collection: string[][] = [];
-
-    for (let i = 0; i < data.length; i++) {
-      let row: CSVData = data[i];
-
-      let csv_array: string[] = [
-        row.date,
-        row.phoneme,
-        row.attempt.toString(),
-        row.correct.toString(),
-        row.accuracy,
-        row.minutes.toString(),
-        row.game,
-      ];
-
-      csv_collection = [...csv_collection, csv_array];
-    }
-
-    this.exportData(csv_collection, data[0].name);
-
-    return;
-  }
-
   public async exportData(
     formatted_data: string[][],
     name: string
