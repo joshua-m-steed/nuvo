@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { CSVData } from "../../../../lib/CSVData";
+
 import autoTable from "jspdf-autotable";
 
 // Make the File
@@ -100,13 +101,13 @@ export class FileService {
 
   public async formatPdfFile(data: CSVData[]): Promise<void> {
     let csv_collection: string[][] = [];
-    let accuracy: string[] = [];
+    let accuracy_list: string[] = [];
     let total_time: number[] = [];
     let phoneme_list: Set<string> = new Set();
 
     for (let i = 0; i < data.length; i++) {
       let row: CSVData = data[i];
-      accuracy = [...accuracy, row.accuracy];
+      accuracy_list = [...accuracy_list, row.accuracy];
       total_time = [...total_time, row.minutes];
       phoneme_list.add(row.phoneme);
 
@@ -123,13 +124,14 @@ export class FileService {
       csv_collection = [...csv_collection, csv_array];
     }
 
-    const averaged_accuracy = this.average_accuracy(accuracy);
+    const averaged_accuracy = this.average_accuracy(accuracy_list);
     const total_minutes = this.total_minutes(total_time);
 
     await this.exportPdfFile(
       csv_collection,
       data[0].name,
       averaged_accuracy,
+      accuracy_list,
       total_minutes,
       phoneme_list
     );
@@ -141,6 +143,7 @@ export class FileService {
     formatted_data: string[][],
     name: string,
     average_accuracy: string,
+    accuracy_list: string[],
     total_minutes: string,
     phoneme_set: Set<string>
   ): Promise<void> {
@@ -243,7 +246,7 @@ export class FileService {
 
     const overall_paragraph: string = `${displayName} should practice the following phonemes: ${this.collective_phoneme(
       phoneme_set
-    )}. They can practice these with family, friends, or using the game(s): ${this.getDEMOGame()}\n`;
+    )}. They can practice these with family, friends, or using the game(s): ${this.getDEMOGame()}.\n`;
 
     const objective_paragraph: string = `${displayName} can accomplish this goal by doing the following: \n${this.getDEMOActivities(
       phoneme_set,
@@ -258,7 +261,7 @@ export class FileService {
     } with ${average_accuracy} as measured by SLP data taken over ${this.getDEMORandomInt(
       2,
       15
-    )} sessions!`;
+    )} sessions!\n`;
 
     // ---- Summary Headers ----
     const sectionTitles = ["Overall Goal", "Objectives", "Results"];
