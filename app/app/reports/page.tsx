@@ -196,8 +196,28 @@ export default function ReportsPage() {
 
       csvDataSet = [...csvDataSet, csvData];
     }
-    console.log("I made it here");
-    await fileService.formatFile(csvDataSet);
+    await fileService.formatCsvFile(csvDataSet);
+  };
+
+  const exportPdf = async (name: string) => {
+    let csvDataSet: CSVData[] = [];
+    for (let i = 0; i < csvRows.length; i++) {
+      const row = csvRows[i];
+
+      const csvData = new CSVData(
+        name,
+        row.date,
+        row.phoneme,
+        row.attempts,
+        row.correct,
+        row.accuracy,
+        row.minutes,
+        row.game
+      );
+
+      csvDataSet = [...csvDataSet, csvData];
+    }
+    await fileService.formatPdfFile(csvDataSet);
   };
 
   return (
@@ -260,7 +280,12 @@ export default function ReportsPage() {
                 >
                   Export as CSV
                 </button>
-                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">
+                <button
+                  className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]"
+                  onClick={async () => {
+                    await exportPdf(studentQuery);
+                  }}
+                >
                   Export as PDF
                 </button>
                 <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">
