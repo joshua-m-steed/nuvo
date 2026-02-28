@@ -682,6 +682,22 @@ export default function StudentsPage() {
           <div className="mt-4 rounded-xl ring-1 ring-black/10 p-3">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">Goals</div>
+            </div>
+
+            <Field label="Overall Goal">
+              <textarea
+                className="w-full px-3 py-5 pt-2 pb-4 rounded-xl ring-1 ring-black/10 text-left align-top"
+                value={draft.overall_goal}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d ? { ...d, overall_goal: e.target.value } : d
+                  )
+                }
+              />
+            </Field>
+
+            <div className="flex items-center justify-between space-y-3">
+              <div className="text-sm font-medium"></div>
               <button
                 className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10"
                 onClick={() =>
@@ -707,23 +723,11 @@ export default function StudentsPage() {
               </button>
             </div>
 
-            <Field label="Overall Goal">
-              <textarea
-                className="w-full px-3 py-5 pt-2 pb-4 rounded-xl ring-1 ring-black/10 text-left align-top"
-                value={draft.overall_goal}
-                onChange={(e) =>
-                  setDraft((d) =>
-                    d ? { ...d, overall_goal: e.target.value } : d
-                  )
-                }
-              />
-            </Field>
-
             <div className="mt-3 space-y-2">
               {draft.goals.map((g, idx) => (
                 <div key={idx} className="rounded-xl ring-1 ring-black/10 p-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Field label="Goal title">
+                    <Field label="Objective Title">
                       <input
                         className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
                         placeholder="e.g., /r/ initial (words)"
