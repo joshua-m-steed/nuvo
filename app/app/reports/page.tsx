@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../../lib/authClient";
-import { assignments as assignmentsApi, students as studentsApi } from "../../../lib/api";
+import {
+  assignments as assignmentsApi,
+  students as studentsApi,
+} from "../../../lib/api";
 import type { HomeworkAssignment, Student } from "../../../lib/types";
+import { CSVData } from "../../../lib/CSVData";
+import { FileService } from "../service/model/FileService";
 
 type Scope = "all" | "individual";
 type ActiveTab = "preview" | "generated";
@@ -45,10 +50,15 @@ export default function ReportsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
 
+  const fileService = new FileService();
+
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [a, s] = await Promise.all([assignmentsApi.list(user), studentsApi.list(user)]);
+      const [a, s] = await Promise.all([
+        assignmentsApi.list(user),
+        studentsApi.list(user),
+      ]);
       setAssignments(a);
       setStudents(s);
     })();
@@ -90,29 +100,47 @@ export default function ReportsPage() {
         set.add(formatPhoneme(g.phoneme));
       }
     }
-    const values = Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    const values = Array.from(set)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
     return ["Any", ...values];
   }, [assignments, students]);
 
   const filteredAssignments = useMemo(() => {
     return assignments.filter((a) => {
-      if (scope === "individual" && !matchedStudentIds.has(a.student_id)) return false;
-      if (phoneme !== "Any" && formatPhoneme(a.targets?.phoneme) !== phoneme) return false;
+      if (scope === "individual" && !matchedStudentIds.has(a.student_id))
+        return false;
+      if (phoneme !== "Any" && formatPhoneme(a.targets?.phoneme) !== phoneme)
+        return false;
       return true;
     });
   }, [assignments, scope, matchedStudentIds, phoneme]);
 
   const subtitle = useMemo(() => {
-    const who = scope === "all" ? "All Students" : studentQuery.trim() ? studentQuery.trim() : "Individual";
+    const who =
+      scope === "all"
+        ? "All Students"
+        : studentQuery.trim()
+        ? studentQuery.trim()
+        : "Individual";
     return `Phoneme • ${phoneme} • ${who}`;
   }, [scope, studentQuery, phoneme]);
 
-  const rows = useMemo(() => buildRows(filteredAssignments, studentsById), [filteredAssignments, studentsById]);
-  const csvRows = useMemo(() => buildCsvRows(filteredAssignments), [filteredAssignments]);
+  const rows = useMemo(
+    () => buildRows(filteredAssignments, studentsById),
+    [filteredAssignments, studentsById]
+  );
+  const csvRows = useMemo(
+    () => buildCsvRows(filteredAssignments),
+    [filteredAssignments]
+  );
 
   const accuracyPct = useMemo(() => {
     if (!filteredAssignments.length) return 0;
-    const sum = filteredAssignments.reduce((acc, a) => acc + statusScore(a.status), 0);
+    const sum = filteredAssignments.reduce(
+      (acc, a) => acc + statusScore(a.status),
+      0
+    );
     return Math.round((sum / filteredAssignments.length) * 100);
   }, [filteredAssignments]);
 
@@ -128,7 +156,13 @@ export default function ReportsPage() {
     if (!students.length) return 0;
     const now = Date.now();
     const active = students
-      .map((s) => (s.last_activity_at ? Math.floor((now - new Date(s.last_activity_at).getTime()) / 86400000) : 30))
+      .map((s) =>
+        s.last_activity_at
+          ? Math.floor(
+              (now - new Date(s.last_activity_at).getTime()) / 86400000
+            )
+          : 30
+      )
       .filter((days) => Number.isFinite(days));
     if (!active.length) return 0;
     const avgDaysAgo = active.reduce((a, b) => a + b, 0) / active.length;
@@ -138,17 +172,42 @@ export default function ReportsPage() {
   const activeFilters = useMemo(() => {
     const chips: string[] = [];
     chips.push(scope === "all" ? "All Students" : "Individual");
-    if (scope === "individual" && studentQuery.trim()) chips.push(`Student: ${studentQuery.trim()}`);
+    if (scope === "individual" && studentQuery.trim())
+      chips.push(`Student: ${studentQuery.trim()}`);
     if (phoneme !== "Any") chips.push(`Phoneme: ${phoneme}`);
     return chips;
   }, [scope, studentQuery, phoneme]);
+
+  const exportCsv = async (name: string) => {
+    let csvDataSet: CSVData[] = [];
+    for (let i = 0; i < csvRows.length; i++) {
+      const row = csvRows[i];
+
+      const csvData = new CSVData(
+        name,
+        row.date,
+        row.phoneme,
+        row.attempts,
+        row.correct,
+        row.accuracy,
+        row.minutes,
+        row.game
+      );
+
+      csvDataSet = [...csvDataSet, csvData];
+    }
+    console.log("I made it here");
+    await fileService.formatFile(csvDataSet);
+  };
 
   return (
     <div className="text-[#161616] space-y-8">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Reports</h1>
-          <p className="text-sm text-black/60 mt-1">Generate simple, parent-friendly or IEP-ready reports-fast.</p>
+          <p className="text-sm text-black/60 mt-1">
+            Generate simple, parent-friendly or IEP-ready reports-fast.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -157,7 +216,9 @@ export default function ReportsPage() {
               type="button"
               onClick={() => setActiveTab("preview")}
               className={`px-3 py-2 text-sm ${
-                activeTab === "preview" ? "bg-[#FFE7E0] text-[#D94E3A] font-medium" : "bg-white text-black/70"
+                activeTab === "preview"
+                  ? "bg-[#FFE7E0] text-[#D94E3A] font-medium"
+                  : "bg-white text-black/70"
               }`}
             >
               Preview
@@ -166,7 +227,9 @@ export default function ReportsPage() {
               type="button"
               onClick={() => setActiveTab("generated")}
               className={`px-3 py-2 text-sm ${
-                activeTab === "generated" ? "bg-[#FFE7E0] text-[#D94E3A] font-medium" : "bg-white text-black/70"
+                activeTab === "generated"
+                  ? "bg-[#FFE7E0] text-[#D94E3A] font-medium"
+                  : "bg-white text-black/70"
               }`}
             >
               Generated Reports
@@ -189,9 +252,20 @@ export default function ReportsPage() {
 
             {exportOpen ? (
               <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-white ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden z-20">
-                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">Export as CSV</button>
-                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">Export as PDF</button>
-                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">Share</button>
+                <button
+                  className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]"
+                  onClick={async () => {
+                    await exportCsv(studentQuery);
+                  }}
+                >
+                  Export as CSV
+                </button>
+                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">
+                  Export as PDF
+                </button>
+                <button className="w-full text-left px-4 py-3 text-sm hover:bg-black/[.03]">
+                  Share
+                </button>
               </div>
             ) : null}
           </div>
@@ -204,14 +278,22 @@ export default function ReportsPage() {
             <Filter label="Scope">
               <div className="inline-flex rounded-xl ring-1 ring-black/10 overflow-hidden">
                 <button
-                  className={`px-3 py-2 text-sm ${scope === "all" ? "bg-[#FFE7E0] text-[#D94E3A] font-medium" : "bg-white text-black/70"}`}
+                  className={`px-3 py-2 text-sm ${
+                    scope === "all"
+                      ? "bg-[#FFE7E0] text-[#D94E3A] font-medium"
+                      : "bg-white text-black/70"
+                  }`}
                   onClick={() => setScope("all")}
                   type="button"
                 >
                   All Students
                 </button>
                 <button
-                  className={`px-3 py-2 text-sm ${scope === "individual" ? "bg-[#FFE7E0] text-[#D94E3A] font-medium" : "bg-white text-black/70"}`}
+                  className={`px-3 py-2 text-sm ${
+                    scope === "individual"
+                      ? "bg-[#FFE7E0] text-[#D94E3A] font-medium"
+                      : "bg-white text-black/70"
+                  }`}
                   onClick={() => setScope("individual")}
                   type="button"
                 >
@@ -246,14 +328,22 @@ export default function ReportsPage() {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-black/40">▾</div>
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-black/40">
+                  ▾
+                </div>
               </div>
             </Filter>
 
             <Filter label="Date Range">
               <div className="flex gap-2">
-                <input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder="Start" />
-                <input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder="End" />
+                <input
+                  className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                  placeholder="Start"
+                />
+                <input
+                  className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                  placeholder="End"
+                />
               </div>
             </Filter>
           </div>
@@ -265,14 +355,19 @@ export default function ReportsPage() {
             >
               More filters
             </button>
-            <button className="px-4 py-2 rounded-xl bg-black/5" onClick={() => {
-              setScope("all");
-              setStudentQuery("");
-              setPhoneme("Any");
-            }}>
+            <button
+              className="px-4 py-2 rounded-xl bg-black/5"
+              onClick={() => {
+                setScope("all");
+                setStudentQuery("");
+                setPhoneme("Any");
+              }}
+            >
               Reset
             </button>
-            <button className="px-4 py-2 rounded-xl bg-gradient-to-b from-[#E45B3E] to-[#D94E3A] text-white">Apply</button>
+            <button className="px-4 py-2 rounded-xl bg-gradient-to-b from-[#E45B3E] to-[#D94E3A] text-white">
+              Apply
+            </button>
           </div>
         </div>
 
@@ -280,34 +375,75 @@ export default function ReportsPage() {
           <span className="text-xs text-black/50">Active filters:</span>
           {activeFilters.length ? (
             activeFilters.map((chip) => (
-              <span key={chip} className="text-xs px-2 py-1 rounded-lg bg-white ring-1 ring-black/10 text-black/70">
+              <span
+                key={chip}
+                className="text-xs px-2 py-1 rounded-lg bg-white ring-1 ring-black/10 text-black/70"
+              >
                 {chip}
               </span>
             ))
           ) : (
-            <span className="text-xs px-2 py-1 rounded-lg bg-white ring-1 ring-black/10 text-black/70">None</span>
+            <span className="text-xs px-2 py-1 rounded-lg bg-white ring-1 ring-black/10 text-black/70">
+              None
+            </span>
           )}
         </div>
       </section>
 
       {showAdvancedFilters ? (
-        <Modal title="More Filters" onClose={() => setShowAdvancedFilters(false)}>
+        <Modal
+          title="More Filters"
+          onClose={() => setShowAdvancedFilters(false)}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Filter label="Clinic / Location"><Select placeholder="All Clinics" /></Filter>
-            <Filter label="Assigned SLP"><Select placeholder="Any" /></Filter>
-            <Filter label="Session Type"><Select placeholder="Clinic • School • Telehealth" /></Filter>
-            <Filter label="Game / Activity"><Select placeholder="Any activity" /></Filter>
-            <Filter label="Goal"><Select placeholder="Select goal" /></Filter>
-            <Filter label="Target Sound / Position"><Select placeholder="/r/ initial • /s/ final" /></Filter>
-            <Filter label="Cue Level"><Select placeholder="None • Visual • Verbal" /></Filter>
-            <Filter label="Accuracy Threshold"><input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder=">= 70%" /></Filter>
-            <Filter label="Minutes Practiced"><input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder=">= 60 min/week" /></Filter>
-            <Filter label="Compliance Tags"><Select placeholder="IEP • Consent • HIPAA" /></Filter>
-            <Filter label="Status"><Select placeholder="All (draft, ready, sent)" /></Filter>
-            <Filter label="Sort"><Select placeholder="Newest first" /></Filter>
+            <Filter label="Clinic / Location">
+              <Select placeholder="All Clinics" />
+            </Filter>
+            <Filter label="Assigned SLP">
+              <Select placeholder="Any" />
+            </Filter>
+            <Filter label="Session Type">
+              <Select placeholder="Clinic • School • Telehealth" />
+            </Filter>
+            <Filter label="Game / Activity">
+              <Select placeholder="Any activity" />
+            </Filter>
+            <Filter label="Goal">
+              <Select placeholder="Select goal" />
+            </Filter>
+            <Filter label="Target Sound / Position">
+              <Select placeholder="/r/ initial • /s/ final" />
+            </Filter>
+            <Filter label="Cue Level">
+              <Select placeholder="None • Visual • Verbal" />
+            </Filter>
+            <Filter label="Accuracy Threshold">
+              <input
+                className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                placeholder=">= 70%"
+              />
+            </Filter>
+            <Filter label="Minutes Practiced">
+              <input
+                className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                placeholder=">= 60 min/week"
+              />
+            </Filter>
+            <Filter label="Compliance Tags">
+              <Select placeholder="IEP • Consent • HIPAA" />
+            </Filter>
+            <Filter label="Status">
+              <Select placeholder="All (draft, ready, sent)" />
+            </Filter>
+            <Filter label="Sort">
+              <Select placeholder="Newest first" />
+            </Filter>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <button className="px-4 py-2 rounded-xl bg-black/5" onClick={() => setShowAdvancedFilters(false)}>
+            <button
+              className="px-4 py-2 rounded-xl bg-black/5"
+              onClick={() => setShowAdvancedFilters(false)}
+            >
               Done
             </button>
           </div>
@@ -322,16 +458,31 @@ export default function ReportsPage() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Stat label="Accuracy" value={`${accuracyPct}%`} caption="from assignments" />
-            <Stat label="Practice" value={`${totalMinutes}m`} caption="from selected data" />
-            <Stat label="Streak" value={`${streakDays} days`} caption="estimated from activity" />
+            <Stat
+              label="Accuracy"
+              value={`${accuracyPct}%`}
+              caption="from assignments"
+            />
+            <Stat
+              label="Practice"
+              value={`${totalMinutes}m`}
+              caption="from selected data"
+            />
+            <Stat
+              label="Streak"
+              value={`${streakDays} days`}
+              caption="estimated from activity"
+            />
           </div>
 
           <div className="mt-4 rounded-xl ring-1 ring-black/10 p-3">
             <div className="text-sm font-medium">Summary (plain language)</div>
             <p className="mt-2 text-sm text-black/70 leading-relaxed">
-              Students showed {accuracyPct >= 75 ? "strong" : "developing"} performance on selected targets. This preview is generated from local
-              demo assignments and target usage. Use this as a parent-ready summary, then export or customize details by date range and phoneme.
+              Students showed {accuracyPct >= 75 ? "strong" : "developing"}{" "}
+              performance on selected targets. This preview is generated from
+              local demo assignments and target usage. Use this as a
+              parent-ready summary, then export or customize details by date
+              range and phoneme.
             </p>
           </div>
 
@@ -354,7 +505,10 @@ export default function ReportsPage() {
                 </thead>
                 <tbody>
                   {csvRows.map((r) => (
-                    <tr key={`${r.date}-${r.game}-${r.phoneme}`} className="border-b border-black/5">
+                    <tr
+                      key={`${r.date}-${r.game}-${r.phoneme}`}
+                      className="border-b border-black/5"
+                    >
                       <td className="py-2 pr-3">{r.date}</td>
                       <td className="py-2 pr-3">{r.phoneme}</td>
                       <td className="py-2 pr-3">{r.attempts}</td>
@@ -368,7 +522,9 @@ export default function ReportsPage() {
               </table>
             </div>
 
-            <div className="mt-2 text-xs text-black/50">These rows mirror what would be included in the CSV export.</div>
+            <div className="mt-2 text-xs text-black/50">
+              These rows mirror what would be included in the CSV export.
+            </div>
           </div>
         </section>
       ) : (
@@ -376,13 +532,20 @@ export default function ReportsPage() {
           <div className="p-4 border-b border-black/10 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium">Generated Reports</h2>
-              <div className="text-sm text-black/60">Saved reports you can reopen, resend, or export.</div>
+              <div className="text-sm text-black/60">
+                Saved reports you can reopen, resend, or export.
+              </div>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <button className="px-3 py-2 rounded-xl bg-black/5" onClick={() => setScheduleOpen(true)}>
+              <button
+                className="px-3 py-2 rounded-xl bg-black/5"
+                onClick={() => setScheduleOpen(true)}
+              >
                 Schedule
               </button>
-              <button className="px-3 py-2 rounded-xl bg-white ring-1 ring-black/10">Bulk Export</button>
+              <button className="px-3 py-2 rounded-xl bg-white ring-1 ring-black/10">
+                Bulk Export
+              </button>
             </div>
           </div>
 
@@ -401,18 +564,29 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={`${r.name}-${i}`} className="border-b border-black/5 hover:bg-black/[.02]">
+                  <tr
+                    key={`${r.name}-${i}`}
+                    className="border-b border-black/5 hover:bg-black/[.02]"
+                  >
                     <td className="p-3 font-medium">{r.name}</td>
                     <td className="p-3">{r.recipient}</td>
                     <td className="p-3">{r.phoneme}</td>
                     <td className="p-3">{r.period}</td>
                     <td className="p-3">{r.created}</td>
-                    <td className="p-3"><StatusPill status={r.status} /></td>
+                    <td className="p-3">
+                      <StatusPill status={r.status} />
+                    </td>
                     <td className="p-3 text-right">
                       <div className="inline-flex gap-2">
-                        <button className="px-3 py-1.5 rounded-lg bg-black/5">Open</button>
-                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">PDF</button>
-                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">CSV</button>
+                        <button className="px-3 py-1.5 rounded-lg bg-black/5">
+                          Open
+                        </button>
+                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">
+                          PDF
+                        </button>
+                        <button className="px-3 py-1.5 rounded-lg bg-white ring-1 ring-black/10">
+                          CSV
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -422,10 +596,16 @@ export default function ReportsPage() {
           </div>
 
           <div className="p-4 flex items-center justify-between text-sm text-black/60">
-            <span>Showing 1-{rows.length} of {rows.length}</span>
+            <span>
+              Showing 1-{rows.length} of {rows.length}
+            </span>
             <div className="flex gap-2">
-              <button className="px-3 py-1.5 rounded-lg bg-black/5">Prev</button>
-              <button className="px-3 py-1.5 rounded-lg bg-black/5">Next</button>
+              <button className="px-3 py-1.5 rounded-lg bg-black/5">
+                Prev
+              </button>
+              <button className="px-3 py-1.5 rounded-lg bg-black/5">
+                Next
+              </button>
             </div>
           </div>
         </section>
@@ -434,18 +614,42 @@ export default function ReportsPage() {
       {scheduleOpen ? (
         <Modal title="Schedule Exports" onClose={() => setScheduleOpen(false)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Filter label="Format"><Select placeholder="CSV • PDF" /></Filter>
-            <Filter label="Scope"><Select placeholder="All Students" /></Filter>
-            <Filter label="Frequency"><Select placeholder="Monthly • Quarterly" /></Filter>
-            <Filter label="Delivery"><Select placeholder="Email • Secure Link" /></Filter>
-            <Filter label="Recipients"><input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder="Parent, Admin" /></Filter>
-            <Filter label="Start Date"><input className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10" placeholder="YYYY-MM-DD" /></Filter>
+            <Filter label="Format">
+              <Select placeholder="CSV • PDF" />
+            </Filter>
+            <Filter label="Scope">
+              <Select placeholder="All Students" />
+            </Filter>
+            <Filter label="Frequency">
+              <Select placeholder="Monthly • Quarterly" />
+            </Filter>
+            <Filter label="Delivery">
+              <Select placeholder="Email • Secure Link" />
+            </Filter>
+            <Filter label="Recipients">
+              <input
+                className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                placeholder="Parent, Admin"
+              />
+            </Filter>
+            <Filter label="Start Date">
+              <input
+                className="w-full px-3 py-2 rounded-xl ring-1 ring-black/10"
+                placeholder="YYYY-MM-DD"
+              />
+            </Filter>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <button className="px-4 py-2 rounded-xl bg-black/5" onClick={() => setScheduleOpen(false)}>
+            <button
+              className="px-4 py-2 rounded-xl bg-black/5"
+              onClick={() => setScheduleOpen(false)}
+            >
               Cancel
             </button>
-            <button className="px-4 py-2 rounded-xl bg-gradient-to-b from-[#E45B3E] to-[#D94E3A] text-white" onClick={() => setScheduleOpen(false)}>
+            <button
+              className="px-4 py-2 rounded-xl bg-gradient-to-b from-[#E45B3E] to-[#D94E3A] text-white"
+              onClick={() => setScheduleOpen(false)}
+            >
               Save Schedule
             </button>
           </div>
@@ -470,10 +674,18 @@ function statusScore(status: HomeworkAssignment["status"]) {
   return 0.35;
 }
 
-function buildRows(assignments: HomeworkAssignment[], studentsById: Map<string, Student>): Row[] {
+function buildRows(
+  assignments: HomeworkAssignment[],
+  studentsById: Map<string, Student>
+): Row[] {
   return assignments.slice(0, 42).map((a) => {
     const student = studentsById.get(a.student_id);
-    const status: Row["status"] = a.status === "completed" ? "Sent" : a.status === "draft" ? "Draft" : "Ready";
+    const status: Row["status"] =
+      a.status === "completed"
+        ? "Sent"
+        : a.status === "draft"
+        ? "Draft"
+        : "Ready";
     return {
       name: `Progress Report - ${student?.name ?? "Student"}`,
       recipient: "Parent",
@@ -487,9 +699,12 @@ function buildRows(assignments: HomeworkAssignment[], studentsById: Map<string, 
 
 function buildCsvRows(assignments: HomeworkAssignment[]): CsvRow[] {
   return assignments.slice(0, 12).map((a) => {
-    const attempts = (a.items?.length ?? a.settings?.item_count ?? 0) * (a.settings?.reps ?? 1);
+    const attempts =
+      (a.items?.length ?? a.settings?.item_count ?? 0) *
+      (a.settings?.reps ?? 1);
     const correct = Math.max(0, Math.round(attempts * statusScore(a.status)));
-    const accuracy = attempts > 0 ? `${Math.round((correct / attempts) * 100)}%` : "0%";
+    const accuracy =
+      attempts > 0 ? `${Math.round((correct / attempts) * 100)}%` : "0%";
     const minutes = Math.max(1, Math.round(attempts / 4));
     const game = friendlyGameName(a.items?.[0]?.minigame_id);
 
@@ -520,7 +735,13 @@ function friendlyGameName(gameId?: string) {
   return gameId;
 }
 
-function Filter({ label, children }: { label: string; children: React.ReactNode }) {
+function Filter({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-xs font-medium text-black/60">{label}</span>
@@ -537,7 +758,15 @@ function Select({ placeholder }: { placeholder: string }) {
   );
 }
 
-function Stat({ label, value, caption }: { label: string; value: string; caption?: string }) {
+function Stat({
+  label,
+  value,
+  caption,
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+}) {
   return (
     <div className="rounded-xl ring-1 ring-black/10 p-3 text-center">
       <div className="text-xs text-black/60">{label}</div>
@@ -554,17 +783,32 @@ function StatusPill({ status }: { status: Row["status"] }) {
       : status === "Draft"
       ? "bg-stone-100 text-stone-700 ring-stone-200"
       : "bg-orange-50 text-orange-700 ring-orange-200";
-  return <span className={`px-2 py-1 rounded-lg text-xs ring-1 ${cls}`}>{status}</span>;
+  return (
+    <span className={`px-2 py-1 rounded-lg text-xs ring-1 ${cls}`}>
+      {status}
+    </span>
+  );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white p-5 ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <button className="px-3 py-1.5 rounded-lg bg-black/5" onClick={onClose}>
+          <button
+            className="px-3 py-1.5 rounded-lg bg-black/5"
+            onClick={onClose}
+          >
             Close
           </button>
         </div>
