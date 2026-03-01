@@ -47,6 +47,9 @@ export default function ReportsPage() {
   const [studentQuery, setStudentQuery] = useState("");
   const [phoneme, setPhoneme] = useState("Any");
 
+  const [openFile, setOpenFile] = useState(false);
+  const [openedFileName, setOpenedFileName] = useState("");
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("preview");
 
   const [exportOpen, setExportOpen] = useState(false);
@@ -668,7 +671,17 @@ export default function ReportsPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="inline-flex gap-2">
-                        <button className="px-3 py-1.5 rounded-lg bg-black/5">
+                        <button
+                          className="px-3 py-1.5 rounded-lg bg-black/5"
+                          onClick={() => {
+                            setOpenFile(true);
+                            setOpenedFileName(
+                              r.name === undefined || r.name === ""
+                                ? "All Students"
+                                : r.name
+                            );
+                          }}
+                        >
                           Open
                         </button>
                         <button
@@ -763,8 +776,81 @@ export default function ReportsPage() {
           </div>
         </Modal>
       ) : null}
+
+      {openFile ? (
+        <Modal
+          title={`${openedFileName}`}
+          onClose={() => {
+            setOpenFile(false);
+            setOpenedFileName("");
+          }}
+        >
+          <div className="flex flex-col max-h-[90vh]">
+            <div className="flex-1 overflow-auto">
+              <div className="flex justify-center p-6">
+                <div className="w-full max-w-5xl overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-left text-black/60">
+                      <tr className="border-b border-black/10">
+                        <th className="py-2 pr-3">Date</th>
+                        <th className="py-2 pr-3">Phoneme</th>
+                        <th className="py-2 pr-3">Attempts</th>
+                        <th className="py-2 pr-3">Correct</th>
+                        <th className="py-2 pr-3">Accuracy</th>
+                        <th className="py-2 pr-3">Minutes</th>
+                        <th className="py-2 pr-3">Game</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvRows.map((r) => (
+                        <tr
+                          key={`${r.date}-${r.game}-${r.phoneme}`}
+                          className="border-b border-black/5"
+                        >
+                          <td className="py-2 pr-3">{r.date}</td>
+                          <td className="py-2 pr-3">{r.phoneme}</td>
+                          <td className="py-2 pr-3">{r.attempts}</td>
+                          <td className="py-2 pr-3">{r.correct}</td>
+                          <td className="py-2 pr-3">{r.accuracy}</td>
+                          <td className="py-2 pr-3">{r.minutes}</td>
+                          <td className="py-2 pr-3">{r.game}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
+}
+
+{
+  /* <div className="mt-4 flex items-center justify-between">
+                <div className="flex gap-2">
+                  <button
+                    className="px-4 py-2 rounded-xl bg-black/5"
+                    onClick={() => setOpenFile(false)}
+                  >
+                    Cancel
+                  </button> */
+}
+{
+  /* <button
+                className="px-4 py-2 rounded-xl bg-gradient-to-b from-[#E45B3E] to-[#D94E3A] text-white"
+                onClick={saveEdit}
+              >
+                Save
+              </button> */
+}
+{
+  /* </div> */
+}
+{
+  /* </div> */
 }
 
 function formatPhoneme(input?: string) {
