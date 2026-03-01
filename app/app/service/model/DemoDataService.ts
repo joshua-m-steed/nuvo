@@ -19,7 +19,7 @@ export class DemoDataService {
   }
 
   public getDEMOActivities(
-    phoneme_list: Set<string>,
+    phoneme_list: string[],
     num_of_activities: number
   ): string {
     let activity_set: string = "";
@@ -29,10 +29,9 @@ export class DemoDataService {
     return activity_set;
   }
 
-  public getDEMOActivity(phoneme_set: Set<string>): string {
-    const phonemes_array = Array.from(phoneme_set);
+  public getDEMOActivity(phoneme_list: string[]): string {
     let activity: string = ` * Playing ${this.getDEMOGame()} to practice ${
-      phonemes_array[this.getDEMORandomInt(0, phonemes_array.length)]
+      phoneme_list[this.getDEMORandomInt(0, phoneme_list.length)]
     } for ${this.getDEMORandomInt(5, 30)} minutes.\n`;
     return activity;
   }
@@ -78,15 +77,31 @@ export class DemoDataService {
     return `${total.toString()}`;
   }
 
-  public collective_phoneme(phoneme_set: Set<string>): string {
-    const phonemes_array = Array.from(phoneme_set);
+  public collective_phoneme(phoneme_list: string[]): string {
+    if (phoneme_list.length === 0) return `[None]`;
+    if (phoneme_list.length === 1) return phoneme_list[0];
 
-    if (phonemes_array.length === 0) return `[None]`;
-    if (phonemes_array.length === 1) return phonemes_array[0];
-
-    const allButLast = phonemes_array.slice(0, -1).join(", ");
-    const lastItem = phonemes_array[phonemes_array.length - 1];
+    const allButLast = phoneme_list.slice(0, -1).join(", ");
+    const lastItem = phoneme_list[phoneme_list.length - 1];
 
     return `${allButLast}, and ${lastItem}`;
+  }
+
+  public gather_data_collections(formatted_data: string[][]): {
+    accuracy_list: string[];
+    time_list: number[];
+    phoneme_list: string[];
+  } {
+    let accuracy_list: string[] = [];
+    let time_list: number[] = [];
+    let phoneme_set: Set<string> = new Set();
+    for (let i = 0; i < formatted_data.length; i++) {
+      let row: string[] = formatted_data[i];
+      accuracy_list = [...accuracy_list, row[4]];
+      time_list = [...time_list, parseInt(row[5])];
+      phoneme_set.add(row[1]);
+    }
+    const phoneme_list = Array.from(phoneme_set);
+    return { accuracy_list, time_list, phoneme_list };
   }
 }
