@@ -1,4 +1,3 @@
-import { CSVData } from "../../../../lib/CSVData";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FileService } from "./FileService";
@@ -9,14 +8,6 @@ export class PdfService extends FileService {
     name: string
   ): Promise<void> {
     const doc = new jsPDF();
-    const { accuracy_list, time_list, phoneme_list } =
-      this.demoDataService.gather_data_collections(formatted_data);
-
-    const averaged_accuracy =
-      this.demoDataService.average_accuracy(accuracy_list);
-    const total_minutes = this.demoDataService.total_minutes(time_list);
-
-    const streak = this.demoDataService.getDEMORandomInt(0, 75);
 
     let displayName: string = "";
     if (name === "") {
@@ -35,11 +26,41 @@ export class PdfService extends FileService {
     const reportTitle = `${displayName} - Progress Report`;
 
     // ---- Add Report Title (Centered) ----
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
+    this.makeTitle(doc, reportTitle);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let currentY = 45;
+    // ---- Box Summaries ----
+    currentY = this.makeSummaryBoxes(doc, pageWidth, currentY, formatted_data);
+
+    // SUMMARY SECTION
+    currentY = this.makeSummaryStatements(
+      doc,
+      currentY,
+      pageWidth,
+      displayName,
+      formatted_data
+    );
+
+    // ---- Graph Placeholder ----
+    currentY = this.makeGraph(doc, currentY, pageWidth);
+
+    this.makeDataTables(doc, formatted_data);
+
+    const img = new Image();
+    img.src = "/assets/favicon.png";
+
+    img.onload = () => {
+      doc.setPage(1);
+      doc.addImage(img, "PNG", 10, 10, 25, 25);
+      doc.save(`${fileName}_Progress_Report.pdf`);
+    };
+  }
+
+  private makeTitle(doc: jsPDF, title: string) {
+    this.setFont(doc, 16, "bold");
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    doc.text(reportTitle, pageWidth / 2, 30, { align: "center" });
+    doc.text(title, pageWidth / 2, 30, { align: "center" });
     let date = new Date();
     const formattedDateTime = date.toLocaleString("en-US", {
       year: "numeric",
@@ -51,19 +72,31 @@ export class PdfService extends FileService {
 
     const created_message = `Created: ${formattedDateTime}`;
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
+    this.setFont(doc, 9, "normal");
     doc.text(created_message, pageWidth - 10, 20, { align: "right" });
 
-    // ---- Horizontal Line ----
     doc.setLineWidth(0.5);
     doc.line(10, 35, pageWidth - 10, 35);
+  }
 
-    // ---- Box Summaries ----
-    let currentY = 45;
+  private makeSummaryBoxes(
+    doc: jsPDF,
+    pageWidth: number,
+    currentY: number,
+    formatted_data: string[][]
+  ): number {
     const boxWidth = (pageWidth - 40) / 3;
     const boxHeight = 30;
     const spacing = 10;
+
+    const { accuracy_list, time_list } =
+      this.demoDataService.gather_data_collections(formatted_data);
+
+    const averaged_accuracy =
+      this.demoDataService.average_accuracy(accuracy_list);
+
+    const total_minutes = this.demoDataService.total_minutes(time_list);
+    const streak = this.demoDataService.getDEMORandomInt(0, 75);
 
     const metrics = [
       { title: "Avg Accuracy", value: averaged_accuracy },
@@ -71,34 +104,68 @@ export class PdfService extends FileService {
       { title: "Streak", value: streak.toString() },
     ];
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    this.setFont(doc, 11, "bold");
 
     metrics.forEach((metric, index) => {
-      const x = 10 + index * (boxWidth + spacing);
-
-      // Rounded rectangle
-      doc.roundedRect(x, currentY, boxWidth, boxHeight, 5, 5);
-
-      // Title
-      doc.setTextColor(228, 91, 62);
-      doc.text(metric.title, x + boxWidth / 2, currentY + 10, {
-        align: "center",
-      });
-
-      // Value
-      doc.setFontSize(16);
-      doc.text(metric.value, x + boxWidth / 2, currentY + 22, {
-        align: "center",
-      });
-
-      doc.setFontSize(11);
+      this.createDisplayBox(
+        doc,
+        metric,
+        index,
+        boxWidth,
+        boxHeight,
+        spacing,
+        currentY
+      );
     });
 
     currentY += boxHeight + 15;
 
     doc.setTextColor(0, 0, 0);
 
+    return currentY;
+  }
+
+  private createDisplayBox(
+    doc: jsPDF,
+    metric: {
+      title: string;
+      value: string;
+    },
+    index: number,
+    boxWidth: number,
+    boxHeight: number,
+    spacing: number,
+    currentY: number
+  ) {
+    const x = 10 + index * (boxWidth + spacing);
+
+    // Rounded rectangle
+    doc.roundedRect(x, currentY, boxWidth, boxHeight, 5, 5);
+
+    // Title
+    doc.setTextColor(228, 91, 62);
+    doc.text(metric.title, x + boxWidth / 2, currentY + 10, {
+      align: "center",
+    });
+
+    // Value
+    this.setFont(doc, 16, "bold");
+    doc.text(metric.value, x + boxWidth / 2, currentY + 22, {
+      align: "center",
+    });
+
+    this.setFont(doc, 11, "bold");
+  }
+
+  private makeSummaryStatements(
+    doc: jsPDF,
+    currentY: number,
+    pageWidth: number,
+    displayName: string,
+    formatted_data: string[][]
+  ): number {
+    const { accuracy_list, phoneme_list } =
+      this.demoDataService.gather_data_collections(formatted_data);
     const overall_paragraph: string = `${displayName} should practice the following phonemes: ${this.demoDataService.collective_phoneme(
       phoneme_list
     )}. They can practice these with family, friends, or using the game(s): ${this.demoDataService.getDEMOGame()}.\n`;
@@ -107,6 +174,9 @@ export class PdfService extends FileService {
       phoneme_list,
       this.demoDataService.getDEMORandomInt(1, 5)
     )}`;
+
+    const averaged_accuracy =
+      this.demoDataService.average_accuracy(accuracy_list);
 
     const current_result_paragraph: string = `${displayName} ${
       displayName == "All Students" ? "were" : "was"
@@ -127,34 +197,32 @@ export class PdfService extends FileService {
       current_result_paragraph,
     ];
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
+    this.setFont(doc, 12, "bold");
 
     for (let i = 0; i < sectionTitles.length; i++) {
       // Title
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      this.setFont(doc, 12, "bold");
       doc.text(sectionTitles[i], 10, currentY);
       currentY += 6;
 
       // Paragraph
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      this.setFont(doc, 10, "normal");
       const splitText = doc.splitTextToSize(paragraphTexts[i], pageWidth - 20);
       doc.text(splitText, 10, currentY);
 
       currentY += splitText.length * 5;
     }
 
-    // ---- Graph Placeholder ----
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
+    return currentY;
+  }
+
+  private makeGraph(doc: jsPDF, currentY: number, pageWidth: number): number {
+    this.setFont(doc, 12, "bold");
     doc.text("Progress Graph", 10, currentY);
     currentY += 8;
 
     const graphHeight = 100;
 
-    // Placeholder box
     doc.rect(10, currentY, pageWidth - 20, graphHeight);
     doc.addImage(
       "/assets/demo_graph.png",
@@ -164,30 +232,18 @@ export class PdfService extends FileService {
       pageWidth - 20,
       graphHeight
     );
-    // doc.text(
-    //   "Graph PNG will render here",
-    //   pageWidth / 2,
-    //   currentY + graphHeight / 2,
-    //   {
-    //     align: "center",
-    //   }
-    // );
 
     currentY += graphHeight + 15;
 
+    return currentY;
+  }
+
+  private makeDataTables(doc: jsPDF, formatted_data: string[][]) {
     const homework = structuredClone(formatted_data);
 
     const sessions = this.demoDataService.getDEMOSessionData(
       structuredClone(formatted_data)
     );
-
-    // ---- Table ----
-    doc.addPage();
-    doc.setPage(doc.getNumberOfPages());
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Sessions", 14, 15);
 
     const session_header = [
       "Date",
@@ -198,28 +254,9 @@ export class PdfService extends FileService {
       "Sessions",
       "Notes",
     ];
+    this.createTable(doc, "Sessions", session_header, sessions);
 
-    autoTable(doc, {
-      startY: 20,
-      head: [session_header],
-      body: sessions,
-      styles: {
-        fontSize: 9,
-      },
-      headStyles: {
-        fillColor: [228, 91, 62],
-      },
-    });
-
-    // ---- Table2 ----
-    doc.addPage();
-    doc.setPage(doc.getNumberOfPages());
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Homework", 14, 15);
-
-    const header = [
+    const homework_header = [
       "Date",
       "Phoneme",
       "Attempts",
@@ -228,11 +265,25 @@ export class PdfService extends FileService {
       "Minutes",
       "Game",
     ];
+    this.createTable(doc, "Homework", homework_header, homework);
+  }
+
+  private createTable(
+    doc: jsPDF,
+    data_name: string,
+    data_header: string[],
+    data_set: string[][]
+  ) {
+    doc.addPage();
+    doc.setPage(doc.getNumberOfPages());
+
+    this.setFont(doc, 12, "bold");
+    doc.text(data_name, 14, 15);
 
     autoTable(doc, {
       startY: 20,
-      head: [header],
-      body: homework,
+      head: [data_header],
+      body: data_set,
       styles: {
         fontSize: 9,
       },
@@ -240,14 +291,10 @@ export class PdfService extends FileService {
         fillColor: [228, 91, 62],
       },
     });
+  }
 
-    const img = new Image();
-    img.src = "/assets/favicon.png";
-
-    img.onload = () => {
-      doc.setPage(1);
-      doc.addImage(img, "PNG", 10, 10, 25, 25);
-      doc.save(`${fileName}_Progress_Report.pdf`);
-    };
+  private setFont(doc: jsPDF, size: number, type: string) {
+    doc.setFontSize(size);
+    doc.setFont("helvetica", type);
   }
 }
